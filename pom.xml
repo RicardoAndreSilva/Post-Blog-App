@@ -8,6 +8,7 @@
   <modelVersion>4.0.0</modelVersion>
   <modules>
     <module>user-service</module>
+    <module>post-service</module>
   </modules>
   <packaging>pom</packaging>
   <parent>
