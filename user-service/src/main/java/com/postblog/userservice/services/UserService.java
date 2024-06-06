@@ -1,22 +1,32 @@
 package com.postblog.userservice.services;
 
 
+import static com.postblog.userservice.utils.Constants.DEFAULT_ROLE_USER_NOT_FOUND;
 import static com.postblog.userservice.utils.Constants.EMAIL_NOT_FOUND;
 import static com.postblog.userservice.utils.Constants.FAILED_TO_CREATE_USER;
 import static com.postblog.userservice.utils.Constants.FAILED_TO_GET_USERS;
 import static com.postblog.userservice.utils.Constants.FAILED_TO_UPDATE_USER;
 import static com.postblog.userservice.utils.Constants.INTERNAL_SERVER_ERROR;
 import static com.postblog.userservice.utils.Constants.NOT_FOUND;
+import static com.postblog.userservice.utils.Constants.PASSWORD_CANNOT_BE_NULL;
+import static com.postblog.userservice.utils.Constants.PASSWORD_DOES_NOT_MATCH;
 import static com.postblog.userservice.utils.Constants.USERNAME_NOT_FOUND;
 import static com.postblog.userservice.utils.Constants.USER_ALREADY_EXISTS;
+import static com.postblog.userservice.utils.Constants.USER_ALREADY_LOGGED_IN;
+import static com.postblog.userservice.utils.Constants.USER_IS_NOT_LOGGED_IN;
 import static com.postblog.userservice.utils.Constants.USER_NOT_FOUND;
 
+import com.postblog.userservice.entities.LoginRequest;
+import com.postblog.userservice.entities.Role;
 import com.postblog.userservice.entities.UserEntity;
 import com.postblog.userservice.entities.UserResponse;
 import com.postblog.userservice.exceptions.HttpException;
+import com.postblog.userservice.repository.RoleRepository;
 import com.postblog.userservice.repository.UserRepository;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -28,6 +38,7 @@ import org.springframework.stereotype.Service;
  * Service class responsible for managing users.
  */
 @Service
+@Slf4j
 public class UserService {
 
   @Autowired
@@ -36,6 +47,68 @@ public class UserService {
   private UserRepository userRepository;
   @Autowired
   private ModelMapper mapper;
+
+  @Autowired
+  private RoleRepository roleRepository;
+
+
+  /**
+   * Marks a user as registered.
+   *
+   * @param userId       The ID of the user to be registered.
+   * @param loginRequest an object with the user's password
+   * @throws HttpException if the user is not found or password does not match.
+   */
+  public void loginUser(Long userId, LoginRequest loginRequest) {
+    String password = loginRequest.getPassword();
+    if (password == null || password.isEmpty()) {
+      throw new HttpException(PASSWORD_CANNOT_BE_NULL, HttpStatus.UNPROCESSABLE_ENTITY.value());
+    }
+    UserEntity user = userRepository.findById(userId)
+        .orElseThrow(() -> new HttpException(USER_NOT_FOUND, HttpStatus.NOT_FOUND.value()));
+    if (user.isRegistered()) {
+      throw new HttpException(USER_ALREADY_LOGGED_IN, HttpStatus.CONFLICT.value());
+    }
+    if (isPasswordMatch(user.getPassword(), password)) {
+      user.setRegistered(true);
+      userRepository.save(user);
+    }
+  }
+
+
+  /**
+   * Checks if the user with the specified user ID is logged in. Throws an HttpException with the
+   * appropriate status code if the user is not logged in.
+   *
+   * @param userId The ID of the user to check.
+   * @throws HttpException If the user is not logged in, with status code
+   *                       HttpStatus.UNPROCESSABLE_ENTITY.
+   */
+  public void isUserLoggedIn(long userId) {
+    UserResponse user = getUserById(userId);
+    if (!user.isRegistered()) {
+      throw new HttpException(USER_IS_NOT_LOGGED_IN, HttpStatus.UNPROCESSABLE_ENTITY.value());
+    }
+  }
+
+
+  /**
+   * Marks a user as logout.
+   *
+   * @param userId The ID of the user registered.
+   * @throws HttpException if the user is not found.
+   */
+
+  public void logoutUser(long userId) {
+    UserEntity user = userRepository.findById(userId).
+        orElseThrow(() -> new HttpException(USER_NOT_FOUND, HttpStatus.NOT_FOUND.value()));
+    if (!user.isRegistered()) {
+      throw new HttpException(USER_IS_NOT_LOGGED_IN, HttpStatus.PRECONDITION_FAILED.value());
+    }
+    user.setRegistered(false);
+    userRepository.save(user);
+  }
+
 
   /**
    * Retrieves user details by ID.
@@ -51,6 +124,7 @@ public class UserService {
         .orElseThrow(() -> new HttpException(USER_NOT_FOUND, NOT_FOUND));
   }
 
+
   /**
    * Creates a new user.
    *
@@ -64,13 +138,17 @@ public class UserService {
       throw new HttpException(USER_ALREADY_EXISTS, HttpStatus.CONFLICT.value());
     }
     try {
-      BCryptPasswordEncoder bCryptPasswordEncoder = new BCryptPasswordEncoder();
       String encryptedPassword = bCryptPasswordEncoder.encode(newUser.getPassword());
       newUser.setPassword(encryptedPassword);
 
+      Role defaultRole = roleRepository.findByName("USER")
+          .orElseThrow(
+              () -> new HttpException(DEFAULT_ROLE_USER_NOT_FOUND, HttpStatus.NOT_FOUND.value()));
+      newUser.setRoles(Collections.singleton(defaultRole));
+
       userRepository.save(newUser);
     } catch (Exception e) {
-      throw new HttpException(FAILED_TO_CREATE_USER, INTERNAL_SERVER_ERROR);
+      throw new HttpException(FAILED_TO_CREATE_USER, HttpStatus.INTERNAL_SERVER_ERROR.value());
     }
   }
 
@@ -98,6 +176,7 @@ public class UserService {
       throw new HttpException(FAILED_TO_UPDATE_USER, INTERNAL_SERVER_ERROR);
     }
   }
+
 
   /**
    * Get all users.
@@ -131,6 +210,7 @@ public class UserService {
     userRepository.deleteById(userId);
   }
 
+
   /**
    * Checks if the provided password matches the user's password.
    *
@@ -142,13 +222,14 @@ public class UserService {
 
   public boolean checkPassword(String email, String providedPassword) {
     Optional<UserEntity> user = userRepository.findByEmail(email);
-    if (user != null && user.isPresent()) {
+    if (user.isPresent()) {
       UserEntity entity = user.get();
       return bCryptPasswordEncoder.matches(providedPassword, entity.getPassword());
     } else {
       throw new HttpException(EMAIL_NOT_FOUND, NOT_FOUND);
     }
   }
+
 
   /**
    * Find a user by username.
@@ -163,18 +244,20 @@ public class UserService {
         .orElseThrow(() -> new HttpException(USERNAME_NOT_FOUND, HttpStatus.NOT_FOUND.value()));
   }
 
+
   /**
-   * Fetches a user by username and returns their roles.
+   * Checks if the provided password matches the stored password using BCryptPasswordEncoder.
    *
-   * @param username The username of the user to be fetched.
-   * @return The found user along with their roles.
-   * @throws HttpException If the user is not found.
+   * @param storedPassword The stored password.
+   * @param password       The password to check against the stored password.
+   * @return True if the passwords match, false otherwise.
+   * @throws HttpException if an error occurs during password comparison.
    */
-  public UserEntity getUserByUsernameWithRoles(String username) {
-    UserEntity user = userRepository.findByUsernameFetchRoles(username);
-    if (user == null) {
-      throw new HttpException(USERNAME_NOT_FOUND, HttpStatus.NOT_FOUND.value());
+  private boolean isPasswordMatch(String storedPassword, String password) {
+    try {
+      return bCryptPasswordEncoder.matches(password, storedPassword);
+    } catch (IllegalArgumentException e) {
+      throw new HttpException(PASSWORD_DOES_NOT_MATCH, HttpStatus.BAD_REQUEST.value());
     }
-    return user;
   }
 }

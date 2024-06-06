@@ -1,5 +1,6 @@
 package com.postblog.userservice.integration;
 
+import static org.aspectj.bridge.MessageUtil.fail;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -8,6 +9,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.postblog.userservice.entities.LoginRequest;
 import com.postblog.userservice.entities.UserEntity;
 import com.postblog.userservice.repository.UserRepository;
 import com.postblog.userservice.utils.UserCreator;
@@ -66,23 +68,21 @@ class UserControllerTestIT {
   void getAllUsers_ReturnsEmptyList_WhenNoUsersExist() {
     String url = createURLWithPort("/api/users");
     ResponseEntity<String> response = testRestTemplate.exchange(
-        url,
-        HttpMethod.GET, null, String.class);
+        url, HttpMethod.GET, null, String.class);
 
     ObjectMapper objectMapper = new ObjectMapper();
     objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-    List<UserEntity> users = null;
-    try {
-      users = objectMapper.readValue(response.getBody(), new TypeReference<List<UserEntity>>() {
-      });
-    } catch (Exception e) {
-      e.printStackTrace();
-    }
 
-    Assertions.assertThat(users)
-        .isNotNull()
-        .isEmpty();
+    try {
+      List<UserEntity> users = objectMapper.readValue(response.getBody(),
+          new TypeReference<List<UserEntity>>() {
+          });
+      Assertions.assertThat(users).isNotNull().isNotEmpty();
+    } catch (JsonProcessingException e) {
+      fail("Error deserializing response: " + e.getMessage());
+    }
   }
+
 
   @Test
   @DisplayName("GetAllUsers returns users when successful")
@@ -241,4 +241,58 @@ class UserControllerTestIT {
     Assertions.assertThat(responseEntity.getStatusCode()).isEqualTo(HttpStatus.OK);
     Assertions.assertThat(responseEntity.getBody()).isTrue();
   }
+
+  @Test
+  @DisplayName("Login user returns 'User logged in' when successful")
+  void loginUser_ReturnsOk_WhenSuccessful() {
+    userRepository.save(UserCreator.createValidUser());
+    String url = createURLWithPort("/api/users/1/login");
+    LoginRequest loginRequest = new LoginRequest();
+    loginRequest.setPassword("password");
+
+    ResponseEntity<String> responseEntity = testRestTemplate.postForEntity(url, loginRequest,
+        String.class);
+
+    Assertions.assertThat(responseEntity).isNotNull();
+    Assertions.assertThat(responseEntity.getStatusCode()).isEqualTo(HttpStatus.OK);
+    Assertions.assertThat(responseEntity.getBody()).isEqualTo("User logged in");
+  }
+
+  @Test
+  @DisplayName("Logout user returns 'User logged out' when successful")
+  void logoutUser_ReturnsOk_WhenSuccessful() {
+    UserEntity user = userRepository.save(UserCreator.createValidUser());
+
+    user.setRegistered(true);
+
+    userRepository.save(user);
+
+    user.setRegistered(false);
+
+    String url = createURLWithPort("/api/users/1/logout");
+    ResponseEntity<String> responseEntity = testRestTemplate.postForEntity(url, null, String.class);
+
+    Assertions.assertThat(responseEntity).isNotNull();
+    Assertions.assertThat(responseEntity.getStatusCode()).isEqualTo(HttpStatus.OK);
+    Assertions.assertThat(responseEntity.getBody()).isEqualTo("User logged out");
+  }
+
+  @Test
+  @DisplayName("Check if user is logged in returns 'User is logged in' when successful")
+  void isUserLoggedIn_ReturnsOk_WhenSuccessful() {
+    UserEntity user = userRepository.save(UserCreator.createUserToBeSaved());
+
+    user.setRegistered(true);
+
+    userRepository.save(user);
+
+    String url = createURLWithPort("/api/users/1/login");
+
+    ResponseEntity<String> responseEntity = testRestTemplate.getForEntity(url, String.class);
+
+    Assertions.assertThat(responseEntity).isNotNull();
+    Assertions.assertThat(responseEntity.getStatusCode()).isEqualTo(HttpStatus.OK);
+    Assertions.assertThat(responseEntity.getBody()).isEqualTo("User is logged in");
+  }
 }
+

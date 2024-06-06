@@ -1,6 +1,7 @@
 package com.postblog.userservice.entities;
 
 import java.time.LocalDateTime;
+import java.util.Set;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -24,6 +25,8 @@ public class UserResponse {
   private String password;
   private LocalDateTime createdAt;
   private String createdBy;
+  private boolean registered;
+  private Set<String> roles;
 }
 
 
