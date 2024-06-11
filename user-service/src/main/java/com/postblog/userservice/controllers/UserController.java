@@ -9,7 +9,6 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.annotation.security.PermitAll;
 import java.util.List;
 import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,7 +36,7 @@ public class UserController {
   @Operation(summary = "Login a user")
   @ApiResponses(value = {
       @ApiResponse(responseCode = "200", description = "User logged in"),
-      @ApiResponse(responseCode = "404", description = "User logged in")
+      @ApiResponse(responseCode = "404", description = "User not Found")
   })
   public ResponseEntity<String> loginUser(@PathVariable long userId,
       @RequestBody LoginRequest request) {
@@ -53,7 +52,8 @@ public class UserController {
   @Operation(summary = "Logout a user")
   @ApiResponses(value = {
       @ApiResponse(responseCode = "200", description = "User logged out"),
-      @ApiResponse(responseCode = "404", description = "User not found")
+      @ApiResponse(responseCode = "404", description = "User not found"),
+      @ApiResponse(responseCode = "400", description = "Invalid request")
   })
   public ResponseEntity<String> logoutUser(@PathVariable Long userId) {
     try {
@@ -102,7 +102,6 @@ public class UserController {
       @ApiResponse(responseCode = "201", description = "User created"),
       @ApiResponse(responseCode = "400", description = "Invalid request")
   })
-  @PermitAll
   public ResponseEntity<String> saveUser(@RequestBody UserEntity user) {
     try {
       userService.createUser(user);

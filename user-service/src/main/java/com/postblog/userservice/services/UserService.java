@@ -1,7 +1,6 @@
 package com.postblog.userservice.services;
 
 
-import static com.postblog.userservice.utils.Constants.DEFAULT_ROLE_USER_NOT_FOUND;
 import static com.postblog.userservice.utils.Constants.EMAIL_NOT_FOUND;
 import static com.postblog.userservice.utils.Constants.FAILED_TO_CREATE_USER;
 import static com.postblog.userservice.utils.Constants.FAILED_TO_GET_USERS;
@@ -17,16 +16,13 @@ import static com.postblog.userservice.utils.Constants.USER_IS_NOT_LOGGED_IN;
 import static com.postblog.userservice.utils.Constants.USER_NOT_FOUND;
 
 import com.postblog.userservice.entities.LoginRequest;
-import com.postblog.userservice.entities.Role;
 import com.postblog.userservice.entities.UserEntity;
 import com.postblog.userservice.entities.UserResponse;
 import com.postblog.userservice.exceptions.HttpException;
 import com.postblog.userservice.repository.RoleRepository;
 import com.postblog.userservice.repository.UserRepository;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -38,7 +34,6 @@ import org.springframework.stereotype.Service;
  * Service class responsible for managing users.
  */
 @Service
-@Slf4j
 public class UserService {
 
   @Autowired
@@ -53,7 +48,7 @@ public class UserService {
 
 
   /**
-   * Marks a user as registered.
+   * Marks a user as Login.
    *
    * @param userId       The ID of the user to be registered.
    * @param loginRequest an object with the user's password
@@ -82,7 +77,8 @@ public class UserService {
    *
    * @param userId The ID of the user to check.
    * @throws HttpException If the user is not logged in, with status code
-   *                       HttpStatus.UNPROCESSABLE_ENTITY.
+   *                       HttpStatus.UNPROCESSABLE_ENTITY, or if the user is not found, with status
+   *                       code HttpStatus.NOT_FOUND.
    */
   public void isUserLoggedIn(long userId) {
     UserResponse user = getUserById(userId);
@@ -140,11 +136,6 @@ public class UserService {
     try {
       String encryptedPassword = bCryptPasswordEncoder.encode(newUser.getPassword());
       newUser.setPassword(encryptedPassword);
-
-      Role defaultRole = roleRepository.findByName("USER")
-          .orElseThrow(
-              () -> new HttpException(DEFAULT_ROLE_USER_NOT_FOUND, HttpStatus.NOT_FOUND.value()));
-      newUser.setRoles(Collections.singleton(defaultRole));
 
       userRepository.save(newUser);
     } catch (Exception e) {

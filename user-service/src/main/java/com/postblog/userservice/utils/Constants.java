@@ -1,8 +1,8 @@
 package com.postblog.userservice.utils;
 
-public class Constants {
+public final class Constants {
 
-  public Constants() {
+  private Constants() {
 
   }
 
