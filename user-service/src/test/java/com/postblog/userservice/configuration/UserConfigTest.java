@@ -1,6 +1,6 @@
 package com.postblog.userservice.configuration;
 
-import com.postblog.userservice.service.UserService;
+import com.postblog.userservice.services.UserService;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

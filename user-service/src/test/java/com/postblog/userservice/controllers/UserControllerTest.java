@@ -1,15 +1,15 @@
-package com.postblog.userservice.controller;
+package com.postblog.userservice.controllers;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 
-import com.postblog.userservice.controllers.UserController;
+import com.postblog.userservice.entities.LoginRequest;
 import com.postblog.userservice.entities.UserEntity;
 import com.postblog.userservice.entities.UserResponse;
 import com.postblog.userservice.exceptions.HttpException;
-import com.postblog.userservice.service.UserService;
+import com.postblog.userservice.services.UserService;
 import com.postblog.userservice.utils.UserCreator;
 import java.util.List;
 import java.util.Map;
@@ -47,13 +47,14 @@ class UserControllerTest {
     when(userServiceMock.getAllUsers()).thenReturn(List.of(userResponse));
     BDDMockito.doNothing().when(userServiceMock).deleteUserById(anyLong());
     BDDMockito.doNothing().when(userServiceMock).createUser(any());
-    when(
-        userServiceMock.updateUserById(any(Long.class), any()))
-        .thenReturn(userResponse);
-    when(userServiceMock.getUserById(anyLong()))
-        .thenReturn(userResponse);
-
+    when(userServiceMock.updateUserById(any(Long.class), any())).thenReturn(userResponse);
+    when(userServiceMock.getUserById(anyLong())).thenReturn(userResponse);
+    //---Authentication---
+    BDDMockito.doNothing().when(userServiceMock).loginUser(anyLong(), any(LoginRequest.class));
+    BDDMockito.doNothing().when(userServiceMock).logoutUser(anyLong());
+    BDDMockito.doNothing().when(userServiceMock).isUserLoggedIn(anyLong());
   }
+
 
   @Test
   @DisplayName("Test for getAllUsers returns list of users when successful")
@@ -246,4 +247,77 @@ class UserControllerTest {
     Assertions.assertThat(responseEntity.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
     Assertions.assertThat(responseEntity.getBody()).isFalse();
   }
+
+  @Test
+  @DisplayName("Test for loginUser returns 'User logged in' when successful")
+  void testLoginUser_ReturnsOk_WhenSuccessful() {
+    LoginRequest request = new LoginRequest("correctPassword");
+
+    ResponseEntity<String> responseEntity = userController.loginUser(1L, request);
+
+    Assertions.assertThat(responseEntity).isNotNull();
+    Assertions.assertThat(responseEntity.getStatusCode()).isEqualTo(HttpStatus.OK);
+    Assertions.assertThat(responseEntity.getBody()).isEqualTo("User logged in");
+  }
+
+  @Test
+  @DisplayName("Test controller returns correct status code when HttpException is thrown during loginUser")
+  void testLoginUser_ReturnsCorrectStatusCode_WhenHttpExceptionThrown() {
+    LoginRequest request = new LoginRequest("incorrectPassword");
+
+    doThrow(new HttpException("Internal Server Error", HttpStatus.INTERNAL_SERVER_ERROR.value()))
+        .when(userServiceMock)
+        .loginUser(anyLong(), any(LoginRequest.class));
+
+    ResponseEntity<String> response = userController.loginUser(1L, request);
+
+    Assertions.assertThat(response.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
+  }
+
+  @Test
+  @DisplayName("Test for logoutUser returns 'User logged out' when successful")
+  void testLogoutUser_ReturnsOk_WhenSuccessful() {
+    ResponseEntity<String> responseEntity = userController.logoutUser(1L);
+
+    Assertions.assertThat(responseEntity).isNotNull();
+    Assertions.assertThat(responseEntity.getStatusCode()).isEqualTo(HttpStatus.OK);
+    Assertions.assertThat(responseEntity.getBody()).isEqualTo("User logged out");
+  }
+
+  @Test
+  @DisplayName("Test controller returns correct status code when HttpException is thrown during logoutUser")
+  void testLogoutUser_ReturnsCorrectStatusCode_WhenHttpExceptionThrown() {
+    doThrow(new HttpException("Internal Server Error", HttpStatus.INTERNAL_SERVER_ERROR.value()))
+        .when(userServiceMock)
+        .logoutUser(anyLong());
+
+    ResponseEntity<String> response = userController.logoutUser(1L);
+
+    Assertions.assertThat(response.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
+  }
+
+  @Test
+  @DisplayName("Test for isUserLoggedIn returns 'User is logged in' when successful")
+  void testIsUserLoggedIn_ReturnsOk_WhenSuccessful() {
+    ResponseEntity<String> responseEntity = userController.isUserLoggedIn(1L);
+
+    Assertions.assertThat(responseEntity).isNotNull();
+    Assertions.assertThat(responseEntity.getStatusCode()).isEqualTo(HttpStatus.OK);
+    Assertions.assertThat(responseEntity.getBody()).isEqualTo("User is logged in");
+  }
+
+  @Test
+  @DisplayName("Test controller returns correct status code when HttpException is thrown during isUserLoggedIn")
+  void testIsUserLoggedIn_ReturnsCorrectStatusCode_WhenHttpExceptionThrown() {
+    doThrow(new HttpException("Internal Server Error", HttpStatus.INTERNAL_SERVER_ERROR.value()))
+        .when(userServiceMock)
+        .isUserLoggedIn(anyLong());
+
+    ResponseEntity<String> response = userController.isUserLoggedIn(1L);
+
+    Assertions.assertThat(response.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
+  }
 }
+
+
+

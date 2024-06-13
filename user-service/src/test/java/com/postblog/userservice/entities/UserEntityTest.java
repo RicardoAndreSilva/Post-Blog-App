@@ -32,7 +32,7 @@ class UserEntityTest {
   public void setUp() {
     userEntity = new UserEntity(userEntity.getId(), "Test user", "testUserEntity@gmail.com", 25,
         "username",
-        "12345", LocalDate.now().atStartOfDay(), "Admin", null, null,null);
+        "12345", LocalDate.now().atStartOfDay(), "Admin", null, null, false, null);
   }
 
   @Test
@@ -122,11 +122,11 @@ class UserEntityTest {
   @DisplayName("Test for equals() and hashCode()")
   void testEqualsAndHashCode_returnsOk_WhenSuccessful() {
     UserEntity user1 = new UserEntity(1L, "John", "test1@jUnit.com", 25, "username", "12345",
-        LocalDate.now().atStartOfDay(), "Admin", null, null,null);
+        LocalDate.now().atStartOfDay(), "Admin", null, null, false, null);
     UserEntity user2 = new UserEntity(1L, "John", "test1@jUnit.com", 25, "username", "12345",
-        LocalDate.now().atStartOfDay(), "Admin", null, null,null);
+        LocalDate.now().atStartOfDay(), "Admin", null, null, false, null);
     UserEntity user3 = new UserEntity(2L, "Jane", "test3@jUnit.com", 25, "username", "12345",
-        LocalDate.now().atStartOfDay(), "Admin", null, null,null);
+        LocalDate.now().atStartOfDay(), "Admin", null, null, false, null);
 
     Assertions.assertThat(user1.equals(user2)).isTrue();
     Assertions.assertThat(user1.hashCode()).hasSameHashCodeAs(user2.hashCode());
@@ -140,7 +140,7 @@ class UserEntityTest {
   @DisplayName("Test for toString()")
   void testToString_returnsOk_WhenSuccessful() {
     UserEntity user = new UserEntity(1L, "spring", "junit5@example.com", 30, "username", "12345",
-        LocalDate.now().atStartOfDay(), "admin", LocalDate.now().atStartOfDay(), null,null);
+        LocalDate.now().atStartOfDay(), "admin", LocalDate.now().atStartOfDay(), null, false, null);
 
     String actualToString = user.toString();
 
