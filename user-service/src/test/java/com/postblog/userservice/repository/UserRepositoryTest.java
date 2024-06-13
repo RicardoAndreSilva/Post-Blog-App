@@ -14,7 +14,6 @@ import org.springframework.context.annotation.Import;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.test.annotation.DirtiesContext;
 
-
 @DataJpaTest
 @DisplayName("Test for User repository")
 @Import(PasswordEnconder.class)
@@ -23,6 +22,7 @@ class UserRepositoryTest {
 
   @Autowired
   private BCryptPasswordEncoder bCryptPasswordEncoder;
+
   @Autowired
   private UserRepository userRepository;
 
@@ -37,7 +37,6 @@ class UserRepositoryTest {
     Assertions.assertThat(userSaved.getEmail()).isEqualTo(userToBeSaved.getEmail());
     Assertions.assertThat(userSaved.getAge()).isEqualTo(userToBeSaved.getAge());
     Assertions.assertThat(userSaved.getUsername()).isEqualTo(userToBeSaved.getUsername());
-
   }
 
   @Test
@@ -66,16 +65,11 @@ class UserRepositoryTest {
     Assertions.assertThat(userUpdated.getPassword()).isEqualTo(newPassword);
   }
 
-  private String getCurrentUserOrSystem() {
-    return "Admin";
-  }
-
-
   @Test
   @DisplayName("Test for delete when successful")
   void delete_persistUserTest_WhenSuccessful() {
-    UserEntity userToBySaved = UserCreator.createUserToBeSaved();
-    UserEntity userSaved = this.userRepository.save(userToBySaved);
+    UserEntity userToBeSaved = UserCreator.createUserToBeSaved();
+    UserEntity userSaved = this.userRepository.save(userToBeSaved);
 
     this.userRepository.delete(userSaved);
 
@@ -93,7 +87,7 @@ class UserRepositoryTest {
 
     Optional<UserEntity> userOptional = this.userRepository.findById(userSaved.getId());
 
-    Assertions.assertThat(userOptional).as("user Id" + userId).isPresent();
+    Assertions.assertThat(userOptional).as("user Id " + userId).isPresent();
     Assertions.assertThat(userOptional.get().getId()).isEqualTo(userId);
   }
 

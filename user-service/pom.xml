@@ -109,21 +109,6 @@
       <version>3.1.1</version>
     </dependency>
     <dependency>
-      <groupId>org.springframework.boot</groupId>
-      <artifactId>spring-boot-starter-security</artifactId>
-    </dependency>
-    <dependency>
-      <artifactId>spring-security-core</artifactId>
-      <groupId>org.springframework.security</groupId>
-      <version>6.2.1</version>
-    </dependency>
-    <dependency>
-      <artifactId>junit-jupiter-engine</artifactId>
-      <groupId>org.junit.jupiter</groupId>
-      <scope>test</scope>
-      <version>5.10.0</version>
-    </dependency>
-    <dependency>
       <artifactId>spring-boot-starter-validation</artifactId>
       <groupId>org.springframework.boot</groupId>
     </dependency>
@@ -140,11 +125,30 @@
     </dependency>
     <dependency>
       <groupId>org.springframework.security</groupId>
-      <artifactId>spring-security-config</artifactId>
+      <artifactId>spring-security-core</artifactId>
+      <version>5.6.1</version>
     </dependency>
     <dependency>
-      <groupId>org.springframework.security</groupId>
-      <artifactId>spring-security-web</artifactId>
+      <artifactId>junit-jupiter-engine</artifactId>
+      <groupId>org.junit.jupiter</groupId>
+      <scope>test</scope>
+      <version>5.10.0</version>
+    </dependency>
+    <dependency>
+      <groupId>com.postblog.postservice</groupId>
+      <artifactId>Post-service</artifactId>
+      <version>0.1.0</version>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.mockito</groupId>
+      <artifactId>mockito-junit-jupiter</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.httpcomponents.client5</groupId>
+      <artifactId>httpclient5</artifactId>
+      <version>5.3.1</version>
     </dependency>
   </dependencies>
   <description>My user service Spring Boot Project</description>

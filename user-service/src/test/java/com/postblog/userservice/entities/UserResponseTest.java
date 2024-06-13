@@ -14,11 +14,11 @@ class UserResponseTest {
   @DisplayName("Test for equals() and hashCode()")
   void testEqualsAndHashCode_returnsOk_WhenSuccessful() {
     UserResponse user1 = new UserResponse(1L, "John", "teste1@example.com", 25, "username",
-        "12345", LocalDate.now().atStartOfDay(), "Admin");
+        "12345", LocalDate.now().atStartOfDay(), "Admin", false, null);
     UserResponse user2 = new UserResponse(1L, "John", "teste1@example.com", 25, "username",
-        "12345", LocalDate.now().atStartOfDay(), "Admin");
+        "12345", LocalDate.now().atStartOfDay(), "Admin", false, null);
     UserResponse user3 = new UserResponse(1L, "John", "test3@example.com", 25, "username",
-        "12345", LocalDate.now().atStartOfDay(), "Admin");
+        "12345", LocalDate.now().atStartOfDay(), "admin", false, null);
 
     boolean equals1to2 = user1.equals(user2);
     boolean equals2to1 = user2.equals(user1);

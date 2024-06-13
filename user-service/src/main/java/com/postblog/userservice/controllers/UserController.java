@@ -1,5 +1,6 @@
 package com.postblog.userservice.controllers;
 
+import com.postblog.userservice.entities.LoginRequest;
 import com.postblog.userservice.entities.UserEntity;
 import com.postblog.userservice.entities.UserResponse;
 import com.postblog.userservice.exceptions.HttpException;
@@ -13,7 +14,6 @@ import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -31,6 +31,55 @@ public class UserController {
 
   @Autowired
   private UserService userService;
+
+  @PostMapping("/users/{userId}/login")
+  @Operation(summary = "Login a user")
+  @ApiResponses(value = {
+      @ApiResponse(responseCode = "200", description = "User logged in"),
+      @ApiResponse(responseCode = "404", description = "User not Found")
+  })
+  public ResponseEntity<String> loginUser(@PathVariable long userId,
+      @RequestBody LoginRequest request) {
+    try {
+      userService.loginUser(userId, request);
+      return ResponseEntity.ok("User logged in");
+    } catch (HttpException e) {
+      return ResponseEntity.status(HttpStatus.valueOf(e.getStatusCode())).body(e.getMessage());
+    }
+  }
+
+  @PostMapping("/users/{userId}/logout")
+  @Operation(summary = "Logout a user")
+  @ApiResponses(value = {
+      @ApiResponse(responseCode = "200", description = "User logged out"),
+      @ApiResponse(responseCode = "404", description = "User not found"),
+      @ApiResponse(responseCode = "400", description = "Invalid request")
+  })
+  public ResponseEntity<String> logoutUser(@PathVariable Long userId) {
+    try {
+      userService.logoutUser(userId);
+      return ResponseEntity.ok("User logged out");
+    } catch (HttpException e) {
+      return ResponseEntity.status(HttpStatus.valueOf(e.getStatusCode())).body(e.getMessage());
+    }
+  }
+
+
+  @GetMapping("/users/{userId}/login")
+  @Operation(summary = "checks if an user is logged in")
+  @ApiResponses(value = {
+      @ApiResponse(responseCode = "200", description = "user is logged in"),
+      @ApiResponse(responseCode = "404", description = "user was not found"),
+      @ApiResponse(responseCode = "422", description = "user is not logged in"),
+  })
+  public ResponseEntity<String> isUserLoggedIn(@PathVariable Long userId) {
+    try {
+      userService.isUserLoggedIn(userId);
+      return ResponseEntity.ok("User is logged in");
+    } catch (HttpException e) {
+      return ResponseEntity.status(HttpStatus.valueOf(e.getStatusCode())).body(e.getMessage());
+    }
+  }
 
   @GetMapping("/users/{userId}")
   @Operation(summary = "Get user details by ID")
@@ -63,7 +112,6 @@ public class UserController {
   }
 
   @PutMapping("/users/{userId}")
-  @PreAuthorize("#userId == authentication.principal.id")
   @Operation(summary = "Update an existing user by ID")
   @ApiResponses(value = {
       @ApiResponse(responseCode = "204", description = "User updated"),
@@ -92,7 +140,6 @@ public class UserController {
   }
 
   @DeleteMapping("/users/{userId}")
-  @PreAuthorize("hasRole('ADMIN')")
   @Operation(summary = "Delete a user by ID")
   @ApiResponses(value = {
       @ApiResponse(responseCode = "204", description = "User deleted"),
